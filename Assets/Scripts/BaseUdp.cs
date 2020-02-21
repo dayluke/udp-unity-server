@@ -30,7 +30,7 @@ public abstract class BaseUdp : MonoBehaviour
                 {
                     var result = await udp.ReceiveAsync();
                     string data = Encoding.ASCII.GetString(result.Buffer);
-                    if (debug) Debug.LogFormat("Server received broadcast from: {0}:{1}", result.RemoteEndPoint.Address.ToString(), result.RemoteEndPoint.Port.ToString());
+                    if (debug) Debug.LogFormat("User received broadcast from: {0}:{1}", result.RemoteEndPoint.Address.ToString(), result.RemoteEndPoint.Port.ToString());
 
                     object[] info = data.Split(new string[]{" -> "}, StringSplitOptions.None);
                     string command = info[0].ToString();
@@ -39,7 +39,11 @@ public abstract class BaseUdp : MonoBehaviour
                     t.RemoveAt(0);
 
                     // Add the players ip address to the Player information so that the server can send messages back to the client.
-                    if (command == "PlayerJoined") t.Add(result.RemoteEndPoint);
+                    if (command == "PlayerJoined")
+                    {
+                        t.Add(result.RemoteEndPoint.Address);
+                        t.Add(result.RemoteEndPoint.Port);
+                    }
                     
                     info = t.ToArray();
 
@@ -58,5 +62,16 @@ public abstract class BaseUdp : MonoBehaviour
                 }
             }
         );
+    }
+
+    protected void SendData(string dataToSend)
+    {
+        Byte[] sendBytes = Encoding.ASCII.GetBytes(dataToSend);
+        udp.Send(sendBytes, sendBytes.Length);
+
+        string[] info = dataToSend.Split(new string[]{" -> "}, StringSplitOptions.None);
+        string command = info[0];
+
+        if (debug) Debug.LogFormat("User invoked '{0}' command on server", command);
     }
 }

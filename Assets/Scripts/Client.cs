@@ -18,13 +18,14 @@ public class Client : BaseUdp
         udp.Connect(ipEndPoint);
 
         if (debug) Debug.LogFormat("Client connected to: {0}:{1}", ipEndPoint.Address.ToString(), ipEndPoint.Port.ToString());
+
+        callableFunctions["JoinLobbyFailed"] = x => JoinLobbyFailed();
+        callableFunctions["JoinLobbySuccess"] = x => JoinLobbySuccess();
     }
 
     public void OnJoinClicked()
     {
         SendData(String.Format("PlayerJoined -> {0} -> {1}", name, PlayerType.MARINE));
-        // Server needs to send a response to say that the client joined successfully.
-        panel.SetActive(false);
         // When server changes scene, change scene on all clients.
     }
 
@@ -40,20 +41,20 @@ public class Client : BaseUdp
         #endif
     }
 
-    private void SendData(string dataToSend)
-    {
-        Byte[] sendBytes = Encoding.ASCII.GetBytes(dataToSend);
-        udp.Send(sendBytes, sendBytes.Length);
-
-        string[] info = dataToSend.Split(new string[]{" -> "}, StringSplitOptions.None);
-        string command = info[0];
-
-        if (debug) Debug.LogFormat("Client invoked '{0}' command on server", command);
-    }
-
     protected override void Close()
     {
         if (debug) Debug.Log("Client closed");
         udp.Close();
+    }
+
+    private void JoinLobbySuccess()
+    {
+        if (debug) Debug.Log("Successfully joined room");
+        panel.SetActive(false);
+    }
+
+    private void JoinLobbyFailed()
+    {
+        Debug.LogFormat("JOINING LOBBY FAILED!");
     }
 }

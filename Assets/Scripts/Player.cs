@@ -6,13 +6,15 @@ public class Player
 {
     public string username;
     public PlayerType playerType;
-    public IPEndPoint ipAddress;
+    public string address;
+    public int port;
 
-    public Player(string name, PlayerType playerSpecies, IPEndPoint iPEndPoint)
+    public Player(string name, PlayerType playerSpecies, string addr, int portNum)
     {
         username = name;
         playerType = playerSpecies;
-        ipAddress = iPEndPoint;
+        address = addr;
+        port = portNum;
     }
 }
 
