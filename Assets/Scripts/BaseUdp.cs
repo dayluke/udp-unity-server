@@ -9,15 +9,15 @@ using UnityEngine;
 public abstract class BaseUdp : MonoBehaviour
 {
     public const int listenPort = 11000;
-    public bool debug = false;
+    public bool debug = true;
     protected UdpClient udp;
     protected Dictionary<string, Action<object[]>> callableFunctions = new Dictionary<string, Action<object[]>>();
 
-    protected abstract void Start();
     protected virtual void Update()
     {
         ReceiveData();
     }
+    public abstract void JoinLobby();
     protected abstract void Close();
 
     protected void ReceiveData()
@@ -62,6 +62,17 @@ public abstract class BaseUdp : MonoBehaviour
                 }
             }
         );
+    }
+
+    public void LeaveLobby()
+    {
+        Close();
+
+        #if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+        #else
+            Application.Quit ();
+        #endif
     }
 
     protected void SendData(string dataToSend)

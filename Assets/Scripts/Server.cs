@@ -5,20 +5,22 @@ using System.Linq;
 using UnityEngine;
 using System.Net;
 using System.Text;
+using UnityEngine.SceneManagement;
 
 public class Server : BaseUdp
 {
-    public Client serversClient;
     public int maxPlayerCount = 1;
     public List<Player> players = new List<Player>();
+    public GameObject panel;
 
     // TODO:
     // Associate server with client. When server is initialised, join server's client.
     // Have a response message from the server to tell the client that it successfully joined.
     // When server clicks change scene, call this on all clients.
 
-    protected override void Start()
+    public override void JoinLobby()
     {
+        panel.SetActive(false);
         try
         {
             udp = new UdpClient(listenPort);
@@ -26,14 +28,13 @@ public class Server : BaseUdp
             callableFunctions["PlayerJoined"] = x => PlayerJoined(x);
             callableFunctions["PlayerLeft"] = x => PlayerLeft(x);
             if (debug) Debug.Log("Server initialised");
-            
-            // serversClient.OnJoinClicked();
         }
         catch (SocketException e)
         {
             Debug.Log(e);
-            Debug.Log("There is already a server running on this port. Deleting this gameobject.");
-            Destroy(gameObject);
+            Debug.Log("There is already a server running on this port. Swapping to a client.");
+            gameObject.AddComponent(typeof(Client));
+            Destroy(this);
         }
     }
 
@@ -47,7 +48,7 @@ public class Server : BaseUdp
 
         if (players.Count >= maxPlayerCount)
         {
-            Debug.LogFormat("Lobby full! '{0}' cannot join. Nooooooo", playerName);
+            Debug.LogFormat("Lobby full! '{0}' cannot join.", playerName);
             byte[] fail = Encoding.ASCII.GetBytes("JoinLobbyFailed");
             udp.Send(fail, fail.Length, new IPEndPoint(IPAddress.Parse(ip), port));
             return;
@@ -81,5 +82,25 @@ public class Server : BaseUdp
     {
         if (debug) Debug.Log("Server closed");
         udp.Close();
+    }
+
+    public void ChangeScene(string sceneToChangeTo)
+    {
+        string command = "ChangeScene";
+        string dataToSend = String.Format("{0} -> {1}", command, sceneToChangeTo);
+        
+        if (debug) Debug.Log("Sending to all clients: " + dataToSend);
+        SendToAllClients(dataToSend);
+
+        SceneManager.LoadScene(sceneToChangeTo);
+    }
+
+    private void SendToAllClients(string message)
+    {
+        byte[] data = Encoding.ASCII.GetBytes(message);
+        foreach (Player player in players)
+        {
+            udp.Send(data, data.Length, new IPEndPoint(IPAddress.Parse(player.address), player.port));
+        }
     }
 }
